@@ -180,6 +180,12 @@ load_csv_to_array() {
 load_configuration() {
     log_info "Loading configuration from CSV files..."
 
+    # Create config directory if it doesn't exist
+    if [[ ! -d "$CONFIG_DIR" ]]; then
+        log_info "Creating config directory: $CONFIG_DIR"
+        mkdir -p "$CONFIG_DIR"
+    fi
+
     # Ensure CSV files exist (create from examples if needed)
     ensure_csv_files
 
