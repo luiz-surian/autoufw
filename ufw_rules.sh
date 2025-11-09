@@ -516,19 +516,18 @@ run_ufw() {
 
     if [[ "$DRY_RUN" == true ]]; then
         if [[ -n "$comment" ]]; then
-            echo "[DRY-RUN] sudo ufw $rule"
-            echo "[DRY-RUN] # Comment: $comment"
+            echo "[DRY-RUN] sudo ufw $rule comment '$comment'"
         else
             echo "[DRY-RUN] sudo ufw $rule"
         fi
     else
-        # Execute rule without comment (more compatible)
-        log_info "Executing: ufw $rule"
-        sudo ufw $rule
-
-        # Log comment for reference only
+        # Execute rule with comment if provided
         if [[ -n "$comment" ]]; then
-            log_info "Comment: $comment"
+            log_info "Executing: ufw $rule comment '$comment'"
+            sudo ufw $rule comment "$comment"
+        else
+            log_info "Executing: ufw $rule"
+            sudo ufw $rule
         fi
     fi
 }
