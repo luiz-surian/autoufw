@@ -1,0 +1,9 @@
+port,protocol,description
+22,tcp,SSH
+80,tcp,HTTP
+443,tcp,HTTPS
+3000,tcp,Web Application
+5432,tcp,PostgreSQL
+6379,tcp,Redis
+8080,tcp,Alternative HTTP
+9000,tcp,Portainer

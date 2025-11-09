@@ -1,0 +1,5 @@
+port,protocol,description
+22,tcp,SSH (if you need public SSH access)
+80,tcp,Public HTTP
+443,tcp,Public HTTPS
+25565,tcp,Minecraft Server
