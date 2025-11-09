@@ -40,6 +40,7 @@ set -euo pipefail  # Abort on error, undefined variables and pipes with failure
 # Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_DIR="$SCRIPT_DIR/config"
+EXAMPLES_DIR="$SCRIPT_DIR/examples"
 
 # CSV file paths
 LOCAL_NETWORKS_CSV="$CONFIG_DIR/local_networks.csv"
@@ -88,22 +89,38 @@ ensure_csv_files() {
         mkdir -p "$CONFIG_DIR"
     fi
 
-    if [[ ! -f "$LOCAL_NETWORKS_CSV" && -f "${LOCAL_NETWORKS_CSV}.example" ]]; then
-        log_info "Creating $LOCAL_NETWORKS_CSV from example file..."
-        cp "${LOCAL_NETWORKS_CSV}.example" "$LOCAL_NETWORKS_CSV"
-        files_created=true
+    # Check and copy example files from examples/ directory
+    if [[ ! -f "$LOCAL_NETWORKS_CSV" ]]; then
+        if [[ -f "$EXAMPLES_DIR/local_networks.csv.example" ]]; then
+            log_info "Creating $LOCAL_NETWORKS_CSV from example file..."
+            cp "$EXAMPLES_DIR/local_networks.csv.example" "$LOCAL_NETWORKS_CSV"
+            files_created=true
+        else
+            log_error "Example file not found: $EXAMPLES_DIR/local_networks.csv.example"
+            exit 1
+        fi
     fi
 
-    if [[ ! -f "$EXTERNAL_RULES_CSV" && -f "${EXTERNAL_RULES_CSV}.example" ]]; then
-        log_info "Creating $EXTERNAL_RULES_CSV from example file..."
-        cp "${EXTERNAL_RULES_CSV}.example" "$EXTERNAL_RULES_CSV"
-        files_created=true
+    if [[ ! -f "$EXTERNAL_RULES_CSV" ]]; then
+        if [[ -f "$EXAMPLES_DIR/external_rules.csv.example" ]]; then
+            log_info "Creating $EXTERNAL_RULES_CSV from example file..."
+            cp "$EXAMPLES_DIR/external_rules.csv.example" "$EXTERNAL_RULES_CSV"
+            files_created=true
+        else
+            log_error "Example file not found: $EXAMPLES_DIR/external_rules.csv.example"
+            exit 1
+        fi
     fi
 
-    if [[ ! -f "$LOCAL_SERVICES_CSV" && -f "${LOCAL_SERVICES_CSV}.example" ]]; then
-        log_info "Creating $LOCAL_SERVICES_CSV from example file..."
-        cp "${LOCAL_SERVICES_CSV}.example" "$LOCAL_SERVICES_CSV"
-        files_created=true
+    if [[ ! -f "$LOCAL_SERVICES_CSV" ]]; then
+        if [[ -f "$EXAMPLES_DIR/local_services.csv.example" ]]; then
+            log_info "Creating $LOCAL_SERVICES_CSV from example file..."
+            cp "$EXAMPLES_DIR/local_services.csv.example" "$LOCAL_SERVICES_CSV"
+            files_created=true
+        else
+            log_error "Example file not found: $EXAMPLES_DIR/local_services.csv.example"
+            exit 1
+        fi
     fi
 
     if [[ "$files_created" == true ]]; then
@@ -123,7 +140,7 @@ load_csv_to_array() {
 
     if [[ ! -f "$csv_file" ]]; then
         log_error "CSV file not found: $csv_file"
-        log_error "Please create it or copy from ${csv_file}.example"
+        log_error "Run the script again to create it from examples/ directory"
         return 1
     fi
 
@@ -398,7 +415,7 @@ Configuration:
     - config/external_rules.csv: public ports accessible externally
     - config/local_services.csv: services accessible only by local networks
 
-    On first run, the script will create these files from .example templates.Examples:
+    On first run, the script will create these files from examples/ templates.Examples:
     $0                      # Add rules using current configuration
     $0 --show-config        # Show configuration without executing
     $0 --dry-run            # Preview changes without applying

@@ -131,6 +131,7 @@ autoufw [options]
 | `--docker-cidr CIDR` | Set custom CIDR for Docker (e.g., 172.17.0.0/16) |
 | `--no-docker` | Disable Docker rules configuration |
 | `--install-alias` | Install 'autoufw' command alias in ~/.bash_aliases |
+| `--update` | Update script from git repository (git pull) |
 | `-h, --help` | Show help message |
 
 ### Examples
@@ -154,6 +155,9 @@ sudo autoufw --reset --force
 
 # Use custom Docker CIDR
 sudo autoufw --docker-cidr 172.18.0.0/16
+
+# Update script from git repository
+autoufw --update
 ```
 
 ## 📁 Project Structure
@@ -164,13 +168,14 @@ autoufw/
 ├── README.md                         # This file
 ├── LICENSE                           # GNU GPL v3 License
 ├── .gitignore                        # Git ignore rules
-└── config/                           # Configuration directory
+├── config/                           # Configuration directory (git-ignored)
+│   ├── local_networks.csv            # Your local networks
+│   ├── external_rules.csv            # Your external rules
+│   └── local_services.csv            # Your local services
+└── examples/                         # Example templates (version-controlled)
     ├── local_networks.csv.example    # Example local networks
     ├── external_rules.csv.example    # Example external rules
-    ├── local_services.csv.example    # Example local services
-    ├── local_networks.csv            # Your local networks (git-ignored)
-    ├── external_rules.csv            # Your external rules (git-ignored)
-    └── local_services.csv            # Your local services (git-ignored)
+    └── local_services.csv.example    # Example local services
 ```
 
 ## 🔧 Configuration Guide
