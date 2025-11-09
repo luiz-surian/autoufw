@@ -136,6 +136,11 @@ load_csv_to_array() {
             continue
         fi
 
+        # Trim whitespace from columns
+        col1=$(echo "$col1" | xargs)
+        col2=$(echo "$col2" | xargs)
+        col3=$(echo "$col3" | xargs)
+
         # Skip empty lines
         if [[ -z "$col1" ]]; then
             continue
