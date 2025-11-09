@@ -450,7 +450,7 @@ add_local_rules_for_network() {
     # IPv6: accepts various formats including compressed (::)
     local ipv4_regex='^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}$'
     local ipv6_regex='^[0-9a-fA-F:]+/[0-9]{1,3}$'
-    
+
     if [[ ! "$cidr" =~ $ipv4_regex ]] && [[ ! "$cidr" =~ $ipv6_regex ]]; then
         log_warn "Invalid CIDR format: '$cidr' - Skipping network $name"
         return
