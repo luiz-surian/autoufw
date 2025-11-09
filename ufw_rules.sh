@@ -241,6 +241,83 @@ show_configuration() {
     echo
 }
 
+# Function to update script from git repository
+update_script() {
+    # Prevent running as root
+    if [[ $EUID -eq 0 ]]; then
+        log_error "This command should NOT be run with sudo or as root"
+        log_error "Run without sudo: ./ufw_rules.sh --update"
+        exit 1
+    fi
+
+    log_info "Updating script from git repository..."
+    echo
+
+    # Check if git is installed
+    if ! command -v git &> /dev/null; then
+        log_error "Git is not installed. Install with: sudo apt install git"
+        exit 1
+    fi
+
+    # Check if we're in a git repository
+    if ! git -C "$SCRIPT_DIR" rev-parse --git-dir &> /dev/null; then
+        log_error "Script directory is not a git repository: $SCRIPT_DIR"
+        log_error "Clone the repository with: git clone https://github.com/luiz-surian/autoufw.git"
+        exit 1
+    fi
+
+    # Check for uncommitted changes
+    if ! git -C "$SCRIPT_DIR" diff-index --quiet HEAD -- 2>/dev/null; then
+        log_warn "You have uncommitted changes in the repository"
+        echo
+        git -C "$SCRIPT_DIR" status --short
+        echo
+        read -p "Stash changes and continue? (y/N): " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            log_info "Stashing local changes..."
+            git -C "$SCRIPT_DIR" stash push -m "Auto-stash before update $(date +%Y-%m-%d_%H:%M:%S)"
+            log_success "Changes stashed successfully"
+        else
+            log_info "Update cancelled"
+            exit 0
+        fi
+    fi
+
+    # Get current branch
+    local current_branch
+    current_branch=$(git -C "$SCRIPT_DIR" rev-parse --abbrev-ref HEAD)
+    log_info "Current branch: $current_branch"
+
+    # Fetch and pull
+    log_info "Fetching updates..."
+    if git -C "$SCRIPT_DIR" fetch origin; then
+        log_success "Fetch completed"
+    else
+        log_error "Failed to fetch updates"
+        exit 1
+    fi
+
+    echo
+    log_info "Pulling changes..."
+    if git -C "$SCRIPT_DIR" pull origin "$current_branch"; then
+        log_success "Update completed successfully!"
+        echo
+        log_info "Repository is now up to date"
+
+        # Show what changed
+        echo
+        log_info "Recent commits:"
+        git -C "$SCRIPT_DIR" log --oneline -5
+    else
+        log_error "Failed to pull updates"
+        log_error "You may need to resolve conflicts manually"
+        exit 1
+    fi
+
+    exit 0
+}
+
 # Function to install command alias
 install_alias() {
     # Prevent running as root
@@ -253,7 +330,7 @@ install_alias() {
     local bash_aliases="$HOME/.bash_aliases"
     local script_path="$(readlink -f "${BASH_SOURCE[0]}")"
     local alias_name="autoufw"
-    local alias_line="alias $alias_name=\"sudo bash $script_path\""
+    local alias_line="alias $alias_name=\"bash $script_path\""
     local comment_line="# UFW rules Automation Script (https://github.com/luiz-surian/autoufw)"
 
     log_info "Installing '$alias_name' command alias..."
@@ -312,6 +389,7 @@ Options:
     --no-docker     Disable Docker rules configuration
     --show-config   Display current configuration and exit
     --install-alias Install 'autoufw' command alias in ~/.bash_aliases
+    --update        Update script from git repository (git pull)
     -h, --help      Show this help
 
 Configuration:
@@ -327,6 +405,7 @@ Configuration:
     $0 --reset --force      # Reset everything without asking confirmation
     $0 --no-docker          # Configure without Docker rules
     $0 --install-alias      # Install 'autoufw' command for easy access
+    $0 --update             # Update script from git repository
 EOF
 }
 
@@ -361,6 +440,9 @@ while [[ $# -gt 0 ]]; do
         --install-alias)
             install_alias
             ;;
+        --update)
+            update_script
+            ;;
         -h|--help)
             show_help
             exit 0
@@ -383,14 +465,14 @@ check_prerequisites() {
         exit 1
     fi
 
-    # Check if running as root or has sudo
-    if [[ $EUID -ne 0 ]] && ! sudo -n true 2>/dev/null; then
-        log_error "This script needs sudo privileges"
+    # Check if user has sudo privileges (will prompt for password if needed)
+    if ! sudo -v; then
+        log_error "This script requires sudo privileges to configure UFW"
         exit 1
     fi
 
     # Check if IPv6 is enabled in UFW
-    if grep -q "IPV6=no" /etc/default/ufw 2>/dev/null; then
+    if sudo grep -q "IPV6=no" /etc/default/ufw 2>/dev/null; then
         log_warn "IPv6 is disabled in UFW. IPv6 rules may not work."
         log_warn "To enable, edit /etc/default/ufw and set IPV6=yes"
     fi
