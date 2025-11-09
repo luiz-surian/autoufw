@@ -295,6 +295,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --show-config)
+            load_configuration
             show_configuration
             exit 0
             ;;
