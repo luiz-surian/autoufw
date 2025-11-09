@@ -441,8 +441,10 @@ add_local_rules_for_network() {
     log_info "Adding rules for $name ($cidr)"
 
     # Basic CIDR validation (IPv4 or IPv6)
+    # IPv4: xxx.xxx.xxx.xxx/xx
+    # IPv6: accepts various formats including compressed (::)
     if [[ ! "$cidr" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}$ ]] && \
-       [[ ! "$cidr" =~ ^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}/[0-9]{1,3}$ ]]; then
+       [[ ! "$cidr" =~ ^[0-9a-fA-F:]+/[0-9]{1,3}$ ]]; then
         log_warn "Possibly invalid CIDR: $cidr - Skipping"
         return
     fi
