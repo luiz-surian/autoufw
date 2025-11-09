@@ -136,10 +136,10 @@ load_csv_to_array() {
             continue
         fi
 
-        # Trim whitespace from columns
-        col1=$(echo "$col1" | xargs)
-        col2=$(echo "$col2" | xargs)
-        col3=$(echo "$col3" | xargs)
+        # Trim whitespace and carriage returns from columns
+        col1=$(echo "$col1" | tr -d '\r' | xargs)
+        col2=$(echo "$col2" | tr -d '\r' | xargs)
+        col3=$(echo "$col3" | tr -d '\r' | xargs)
 
         # Skip empty lines
         if [[ -z "$col1" ]]; then
@@ -448,9 +448,11 @@ add_local_rules_for_network() {
     # Basic CIDR validation (IPv4 or IPv6)
     # IPv4: xxx.xxx.xxx.xxx/xx
     # IPv6: accepts various formats including compressed (::)
-    if [[ ! "$cidr" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}$ ]] && \
-       [[ ! "$cidr" =~ ^[0-9a-fA-F:]+/[0-9]{1,3}$ ]]; then
-        log_warn "Possibly invalid CIDR: $cidr - Skipping"
+    local ipv4_regex='^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}$'
+    local ipv6_regex='^[0-9a-fA-F:]+/[0-9]{1,3}$'
+    
+    if [[ ! "$cidr" =~ $ipv4_regex ]] && [[ ! "$cidr" =~ $ipv6_regex ]]; then
+        log_warn "Invalid CIDR format: '$cidr' - Skipping network $name"
         return
     fi
 
