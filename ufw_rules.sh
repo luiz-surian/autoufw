@@ -243,6 +243,13 @@ show_configuration() {
 
 # Function to install command alias
 install_alias() {
+    # Prevent running as root
+    if [[ $EUID -eq 0 ]]; then
+        log_error "This command should NOT be run with sudo or as root"
+        log_error "Run without sudo: ./ufw_rules.sh --install-alias"
+        exit 1
+    fi
+
     local bash_aliases="$HOME/.bash_aliases"
     local script_path="$(readlink -f "${BASH_SOURCE[0]}")"
     local alias_name="autoufw"
