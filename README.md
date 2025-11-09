@@ -41,7 +41,22 @@ cd autoufw
 chmod +x ufw_rules.sh
 ```
 
-### 3. First Run (Creates Configuration Files)
+### 3. Install Command Alias (Optional but Recommended)
+
+```bash
+./ufw_rules.sh --install-alias
+source ~/.bash_aliases
+```
+
+This creates an `autoufw` command that you can use from anywhere:
+
+```bash
+autoufw --help
+autoufw --show-config
+autoufw --dry-run
+```
+
+### 4. First Run (Creates Configuration Files)
 
 ```bash
 ./ufw_rules.sh
@@ -53,7 +68,7 @@ On first run, the script will create configuration files from examples:
 - `config/external_rules.csv` - Public ports accessible from anywhere
 - `config/local_services.csv` - Services accessible only from local networks
 
-### 4. Customize Configuration
+### 5. Customize Configuration
 
 Edit the CSV files in the `config/` directory to match your setup:
 
@@ -85,13 +100,13 @@ port,protocol,description
 9000,tcp,Portainer
 ```
 
-### 5. Preview Changes (Dry Run)
+### 6. Preview Changes (Dry Run)
 
 ```bash
 ./ufw_rules.sh --dry-run
 ```
 
-### 6. Apply Configuration
+### 7. Apply Configuration
 
 ```bash
 sudo ./ufw_rules.sh
@@ -101,6 +116,8 @@ sudo ./ufw_rules.sh
 
 ```bash
 ./ufw_rules.sh [options]
+# Or if you installed the alias:
+autoufw [options]
 ```
 
 ### Options
@@ -113,25 +130,30 @@ sudo ./ufw_rules.sh
 | `--force` | Don't ask for confirmation (use with caution) |
 | `--docker-cidr CIDR` | Set custom CIDR for Docker (e.g., 172.17.0.0/16) |
 | `--no-docker` | Disable Docker rules configuration |
+| `--install-alias` | Install 'autoufw' command alias in ~/.bash_aliases |
 | `-h, --help` | Show help message |
 
 ### Examples
 
 ```bash
+# Install the command alias (one-time setup)
+./ufw_rules.sh --install-alias
+source ~/.bash_aliases
+
 # Preview what will be configured
-./ufw_rules.sh --dry-run
+autoufw --dry-run
 
 # Show current configuration
-./ufw_rules.sh --show-config
+autoufw --show-config
 
 # Apply rules without Docker configuration
-sudo ./ufw_rules.sh --no-docker
+sudo autoufw --no-docker
 
 # Reset all rules and apply new configuration
-sudo ./ufw_rules.sh --reset --force
+sudo autoufw --reset --force
 
 # Use custom Docker CIDR
-sudo ./ufw_rules.sh --docker-cidr 172.18.0.0/16
+sudo autoufw --docker-cidr 172.18.0.0/16
 ```
 
 ## 📁 Project Structure
@@ -225,6 +247,27 @@ Run the script with sudo:
 
 ```bash
 sudo ./ufw_rules.sh
+# Or with alias:
+autoufw
+```
+
+### Command Not Found (after installing alias)
+
+Reload your bash configuration:
+
+```bash
+source ~/.bash_aliases
+# Or restart your terminal
+```
+
+### Windows Line Endings (CRLF) Issues
+
+If you edit CSV files on Windows and see validation errors, the script automatically handles CRLF line endings. However, if issues persist, convert them to Unix format:
+
+```bash
+dos2unix config/*.csv
+# Or using sed:
+sed -i 's/\r$//' config/*.csv
 ```
 
 ### IPv6 Not Working

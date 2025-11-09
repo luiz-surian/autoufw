@@ -241,6 +241,56 @@ show_configuration() {
     echo
 }
 
+# Function to install command alias
+install_alias() {
+    local bash_aliases="$HOME/.bash_aliases"
+    local script_path="$(readlink -f "${BASH_SOURCE[0]}")"
+    local alias_name="autoufw"
+    local alias_line="alias $alias_name=\"sudo bash $script_path\""
+    local comment_line="# UFW rules Automation Script (https://github.com/luiz-surian/autoufw)"
+
+    log_info "Installing '$alias_name' command alias..."
+
+    # Check if alias already exists
+    if [[ -f "$bash_aliases" ]] && grep -q "alias $alias_name=" "$bash_aliases" 2>/dev/null; then
+        log_warn "Alias '$alias_name' already exists in $bash_aliases"
+        read -p "Update existing alias? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            log_info "Installation cancelled"
+            return 0
+        fi
+
+        # Remove old alias
+        sed -i "/alias $alias_name=/d" "$bash_aliases"
+        sed -i "\|# UFW rules Automation Script|d" "$bash_aliases"
+    fi
+
+    # Create .bash_aliases if it doesn't exist
+    if [[ ! -f "$bash_aliases" ]]; then
+        touch "$bash_aliases"
+        log_info "Created $bash_aliases"
+    fi
+
+    # Add alias with comment
+    echo "" >> "$bash_aliases"
+    echo "$comment_line" >> "$bash_aliases"
+    echo "$alias_line" >> "$bash_aliases"
+
+    log_success "Alias installed successfully!"
+    echo
+    log_info "Script location: $script_path"
+    log_info "Alias definition: $alias_line"
+    echo
+    log_warn "To activate the alias, run:"
+    echo "  source ~/.bash_aliases"
+    echo "Or restart your terminal session."
+    echo
+    log_info "After activation, you can use: $alias_name [options]"
+
+    exit 0
+}
+
 # Help function
 show_help() {
     cat << EOF
@@ -254,6 +304,7 @@ Options:
     --docker-cidr   Set custom CIDR for Docker (e.g.: 172.17.0.0/16)
     --no-docker     Disable Docker rules configuration
     --show-config   Display current configuration and exit
+    --install-alias Install 'autoufw' command alias in ~/.bash_aliases
     -h, --help      Show this help
 
 Configuration:
@@ -268,6 +319,7 @@ Configuration:
     $0 --dry-run            # Preview changes without applying
     $0 --reset --force      # Reset everything without asking confirmation
     $0 --no-docker          # Configure without Docker rules
+    $0 --install-alias      # Install 'autoufw' command for easy access
 EOF
 }
 
@@ -298,6 +350,9 @@ while [[ $# -gt 0 ]]; do
             load_configuration
             show_configuration
             exit 0
+            ;;
+        --install-alias)
+            install_alias
             ;;
         -h|--help)
             show_help
