@@ -257,7 +257,14 @@ show_configuration() {
     echo
     echo -e "${Blue}Docker:${Color_Off}"
     if [[ "$ENABLE_DOCKER_RULES" == true ]]; then
-        echo "  - Enabled (CIDR: ${DOCKER_CIDR:-"auto-detect"})"
+        if [[ ${#DOCKER_NETWORKS[@]} -gt 0 ]]; then
+            for docker_network in "${DOCKER_NETWORKS[@]}"; do
+                IFS=':' read -r name cidr <<< "$docker_network"
+                echo "  - $name: $cidr"
+            done
+        else
+            echo "  - Enabled (CIDR: ${DOCKER_CIDR:-"auto-detect"})"
+        fi
     else
         echo "  - Disabled"
     fi
@@ -510,25 +517,29 @@ detect_docker_cidr() {
         return
     fi
 
+    # If custom CIDR is provided, use it
     if [[ -n "$DOCKER_CIDR" ]]; then
         log_info "Using custom Docker CIDR: $DOCKER_CIDR"
         return
     fi
 
-    if command -v docker &> /dev/null && docker info &> /dev/null; then
-        local detected_cidr
-        detected_cidr=$(docker network inspect bridge --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}' 2>/dev/null || echo "")
+    # Use Docker's default private IP range (covers all Docker networks)
+    # RFC 1918: 172.16.0.0/12 covers 172.16.0.0 to 172.31.255.255
+    DOCKER_CIDR="172.16.0.0/12"
 
-        if [[ -n "$detected_cidr" ]]; then
-            DOCKER_CIDR="$detected_cidr"
-            log_info "Docker CIDR detected: $DOCKER_CIDR"
-        else
-            DOCKER_CIDR="172.17.0.0/16"
-            log_warn "Could not detect Docker CIDR. Using default: $DOCKER_CIDR"
+    # Check if Docker is installed and running (for informational purposes)
+    if command -v docker &> /dev/null && docker info &> /dev/null 2>&1; then
+        log_info "Docker detected - using standard Docker CIDR range: $DOCKER_CIDR"
+
+        # Show detected networks for informational purposes
+        local networks
+        networks=$(docker network ls --format '{{.Name}}' --filter 'driver=bridge' 2>/dev/null | wc -l)
+        if [[ $networks -gt 0 ]]; then
+            log_info "Found $networks Docker bridge network(s)"
         fi
     else
-        DOCKER_CIDR="172.17.0.0/16"
-        log_warn "Docker not detected. Using default CIDR: $DOCKER_CIDR"
+        log_warn "Docker not detected or not running"
+        log_warn "Using standard Docker CIDR range: $DOCKER_CIDR"
     fi
 }
 
@@ -657,7 +668,7 @@ add_local_rules() {
         fi
     done
 
-    # Add Docker rules if enabled
+    # Add Docker rules if enabled (single rule for all Docker networks)
     if [[ "$ENABLE_DOCKER_RULES" == true && -n "$DOCKER_CIDR" ]]; then
         add_local_rules_for_network "Docker" "$DOCKER_CIDR"
     fi
@@ -685,8 +696,8 @@ main() {
     # Check prerequisites
     check_prerequisites
 
-    # Detect Docker CIDR
-    detect_docker_cidr
+    # Detect all Docker networks
+    detect_docker_networks
 
     # Show current configuration if not dry-run
     if [[ "$DRY_RUN" == false ]]; then
