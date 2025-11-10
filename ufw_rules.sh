@@ -257,14 +257,7 @@ show_configuration() {
     echo
     echo -e "${Blue}Docker:${Color_Off}"
     if [[ "$ENABLE_DOCKER_RULES" == true ]]; then
-        if [[ ${#DOCKER_NETWORKS[@]} -gt 0 ]]; then
-            for docker_network in "${DOCKER_NETWORKS[@]}"; do
-                IFS=':' read -r name cidr <<< "$docker_network"
-                echo "  - $name: $cidr"
-            done
-        else
-            echo "  - Enabled (CIDR: ${DOCKER_CIDR:-"auto-detect"})"
-        fi
+        echo "  - Enabled (CIDR: ${DOCKER_CIDR:-"auto-detect"})"
     else
         echo "  - Disabled"
     fi
@@ -696,8 +689,8 @@ main() {
     # Check prerequisites
     check_prerequisites
 
-    # Detect all Docker networks
-    detect_docker_networks
+    # Detect Docker CIDR
+    detect_docker_cidr
 
     # Show current configuration if not dry-run
     if [[ "$DRY_RUN" == false ]]; then
